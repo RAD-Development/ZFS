@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Sets file name
-Time="$1"_$(date +%m-%d_%I:%M)
+Time="$1"_$(date +%m-%d_%H:%M)
 
 Msg_Dis() {
 	## formats message
