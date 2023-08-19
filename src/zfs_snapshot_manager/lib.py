@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 from re import search, compile as re_compile
 
@@ -45,6 +47,7 @@ def delete_snapshot(dataset_name: str, snapshot: str):
         dataset_name (str): a dataset name
         snapshot (str): a snapshot name
     """
+    logging.debug("deleting %s@%s", dataset_name, snapshot)
     bash_wrapper(f"sudo zfs destroy {dataset_name}@{snapshot}")
 
 
@@ -67,7 +70,13 @@ def delete_snapshots_in_dataset(
     ]
     filtered_snapshots.sort()
 
-    for snapshot in filtered_snapshots[:-snapshots_wanted]:
+    logging.debug("snapshot_filter %s", snapshot_filter)
+    logging.debug("filtered_snapshots %s", filtered_snapshots)
+    
+    snapshots_being_deleted = filtered_snapshots[:-snapshots_wanted]
+    logging.info("%s are being deleted", snapshots_being_deleted)
+
+    for snapshot in snapshots_being_deleted:
         delete_snapshot(dataset_name=dataset_name, snapshot=snapshot)
 
 
