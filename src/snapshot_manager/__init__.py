@@ -1,3 +1,15 @@
-from .snapshot_manager import load_config_data, get_snapshots, create_snapshots, manage_snapshots, main
+from .lib import (
+    get_snapshots,
+    create_snapshots,
+    delete_snapshot,
+    delete_snapshots,
+    delete_snapshots_in_dataset,
+)
 
-
+__all__ = (
+    "get_snapshots",
+    "create_snapshots",
+    "delete_snapshot",
+    "delete_snapshots",
+    "delete_snapshots_in_dataset",
+)

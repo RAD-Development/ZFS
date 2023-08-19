@@ -1,77 +1,51 @@
 import unittest
 from datetime import datetime, timezone
 from re import compile as re_compile
-from tempfile import NamedTemporaryFile
 from unittest.mock import patch, MagicMock, call
 
 from snapshot_manager import (
-    load_config_data,
     get_snapshots,
     create_snapshots,
-    manage_snapshots,
+    delete_snapshots,
+    delete_snapshots_in_dataset,
 )
 
 
-class TestGetSnapshots(unittest.TestCase):
-    @patch(target="snapshot_manager.snapshot_manager.bash_wrapper", return_value=MagicMock())
+class TestGetSnapshots:
+    @patch(
+        target="snapshot_manager.lib.bash_wrapper",
+        return_value=MagicMock(),
+    )
     def test_get_snapshots(self, mock_bash_wrapper):
-        comand_return = "mock_snapshot_1@time\nmock_snapshot_2@time\n"
-        mock_bash_wrapper.return_value = (comand_return, "", 0)
+        mock_bash_wrapper.return_value = "mock_snapshot_1@time\nmock_snapshot_2@time\n"
 
         expected_result = {"mock_snapshot_1": {"time"}, "mock_snapshot_2": {"time"}}
-        self.assertEqual(get_snapshots(), expected_result)
-
-    @patch(target="snapshot_manager.snapshot_manager.bash_wrapper", return_value=MagicMock())
-    def test_get_snapshots_error(self, mock_bash_wrapper):
-        mock_bash_wrapper.return_value = ("", "", 1)
-        with self.assertRaises(ValueError):
-            get_snapshots()
+        assert get_snapshots() == expected_result
 
 
-class TestCreateSnapshots(unittest.TestCase):
-    @patch(target="snapshot_manager.snapshot_manager.bash_wrapper", return_value=MagicMock())
-    def test_create_snapshots(self, mock_bash_wrapper):
-        mock_bash_wrapper.return_value = ("", "", 0)
-        now = datetime(2023, 8, 1, 0, 0, 0, 0, timezone.utc)
-
-        create_snapshots(now, {"dataset1", "dataset2"})
-
-        expected_calls = [
-            call(f"sudo zfs snapshot dataset1@auto_202308010000"),
-            call(f"sudo zfs snapshot dataset2@auto_202308010000"),
-        ]
-        mock_bash_wrapper.assert_has_calls(expected_calls, any_order=True)
-
+class TestCreateSnapshots:
     @patch(
-        target="snapshot_manager.snapshot_manager.bash_wrapper",
-        return_value=("", "An error occurred", 1),
+        target="snapshot_manager.lib.bash_wrapper",
+        return_value=MagicMock(),
     )
-    @patch(target="snapshot_manager.snapshot_manager.logging")
-    def test_create_snapshots_error(self, mock_logging, mock_bash_wrapper):
+    def test_create_snapshots(self, mock_bash_wrapper):
+        mock_bash_wrapper.return_value = ""
         now = datetime(2023, 8, 1, 0, 0, 0, 0, timezone.utc)
 
         create_snapshots(now, {"dataset1", "dataset2"})
 
         expected_calls = [
-            call(f"sudo zfs snapshot dataset1@auto_202308010000"),
-            call(f"sudo zfs snapshot dataset2@auto_202308010000"),
+            call("sudo zfs snapshot dataset1@auto_202308010000"),
+            call("sudo zfs snapshot dataset2@auto_202308010000"),
         ]
         mock_bash_wrapper.assert_has_calls(expected_calls, any_order=True)
 
-        expected_calls = [
-            call("%s %i", "An error occurred", 1),
-            call("%s %i", "An error occurred", 1),
-        ]
-        mock_logging.critical.assert_has_calls(expected_calls, any_order=True)
 
-
-class TestManageSnapshots(unittest.TestCase):
-    @patch(target="snapshot_manager.snapshot_manager.bash_wrapper", return_value=MagicMock())
+class TestManageSnapshots:
+    @patch(target="snapshot_manager.lib.bash_wrapper", return_value="")
     def test_manage_snapshots(self, mock_bash_wrapper):
-        mock_bash_wrapper.return_value = ("", "", 0)
-
         dataset_name = "test/data"
-        snapshot_filter = re_compile(r"auto_[0-9]{10}(?:15|30|45)")
+        snapshot_filter = re_compile(r"auto_\d{10}(?:15|30|45)")
         snapshots = [
             "auto_202208061215",
             "auto_202308010000",
@@ -82,56 +56,68 @@ class TestManageSnapshots(unittest.TestCase):
 
         snapshots_wanted = 1
 
-        manage_snapshots(dataset_name, snapshot_filter, snapshots, snapshots_wanted)
+        delete_snapshots_in_dataset(
+            dataset_name=dataset_name,
+            snapshot_filter=snapshot_filter,
+            snapshots=snapshots,
+            snapshots_wanted=snapshots_wanted,
+        )
 
         expected_calls = [
-            call(f"sudo zfs destroy test/data@auto_202208061215"),
-            call(f"sudo zfs destroy test/data@auto_202308061215"),
-            call(f"sudo zfs destroy test/data@auto_202308061230"),
+            call("sudo zfs destroy test/data@auto_202208061215"),
+            call("sudo zfs destroy test/data@auto_202308061215"),
+            call("sudo zfs destroy test/data@auto_202308061230"),
         ]
         mock_bash_wrapper.assert_has_calls(expected_calls, any_order=True)
 
-    @patch(target="snapshot_manager.snapshot_manager.bash_wrapper", return_value=MagicMock())
-    @patch(target="snapshot_manager.snapshot_manager.logging")
-    def test_bash_wrapper_error(self, mock_logging, mock_bash_wrapper):
-        mock_bash_wrapper.return_value = ("", "An error occurred", 1)
 
-        dataset_name = "test/data"
-        snapshot_filter = re_compile(r"auto_[0-9]{10}(?:15|30|45)")
-        snapshots = [
-            "auto_202208061215",
-            "auto_202308010000",
+class TestDeleteSnapshots:
+    @patch(target="snapshot_manager.lib.delete_snapshot", return_value="")
+    @patch(target="snapshot_manager.lib.get_snapshots", return_value=MagicMock())
+    def test_delete_snapshots(self, mock_get_snapshots, mock_delete_snapshot):
+        snapshots = {
+            "auto_202208010030",
+            "auto_202308010030",
+            "auto_202308052345",
+            "auto_202308060000",
+            "auto_202308060015",
+            "auto_202308060030",
+            "auto_202308060045",
+            "auto_202308060145",
+            "auto_202308060200",
+            "auto_202308060300",
+            "auto_202308061200",
             "auto_202308061215",
+            "auto_202308190030",
+        }
+
+        mock_get_snapshots.return_value = {
+            "test/data": snapshots,
+            "test/data2": snapshots,
+            "test/data3": snapshots,
+        }
+
+        config_data = {
+            "test/data": {"15_min": 6, "hourly": 2, "daily": 0, "monthly": 0},
+            "test/data2": {"15_min": 2},
+        }
+        delete_snapshots(config_data=config_data)
+
+        expected_calls = [
+            call(dataset_name="test/data", snapshot="auto_202208010030"),
+            call(dataset_name="test/data", snapshot="auto_202308010030"),
+            call(dataset_name="test/data", snapshot="auto_202308052345"),
+            call(dataset_name="test/data", snapshot="auto_202308060200"),
+            call(dataset_name="test/data2", snapshot="auto_202208010030"),
+            call(dataset_name="test/data2", snapshot="auto_202308010030"),
+            call(dataset_name="test/data2", snapshot="auto_202308052345"),
+            call(dataset_name="test/data2", snapshot="auto_202308060015"),
+            call(dataset_name="test/data2", snapshot="auto_202308060030"),
+            call(dataset_name="test/data2", snapshot="auto_202308060045"),
+            call(dataset_name="test/data2", snapshot="auto_202308060145"),
         ]
 
-        snapshots_wanted = 1
-
-        with self.assertRaises(ValueError):
-            manage_snapshots(dataset_name, snapshot_filter, snapshots, snapshots_wanted)
-
-        expected_calls = [call(f"sudo zfs destroy test/data@auto_202208061215")]
-        mock_bash_wrapper.assert_has_calls(expected_calls, any_order=True)
-        mock_logging.critical.assert_called_once_with("%s %i", "An error occurred", 1)
-
-
-class TestLoadConfigData(unittest.TestCase):
-    def test_load_config_data(self):
-        with NamedTemporaryFile() as temp_file:
-            temp_file.write(b"['test/data']\n15_min = 6\nhourly = 2")
-            temp_file.flush()
-
-            expected_result = {"test/data": {"15_min": 6, "hourly": 2}}
-            self.assertEqual(load_config_data(temp_file.name), expected_result)
-
-
-class TestLoadConfigData(unittest.TestCase):
-    def test_load_config_data(self):
-        with NamedTemporaryFile() as temp_file:
-            temp_file.write(b"['test/data']\n15_min = 6\nhourly = 2")
-            temp_file.flush()
-
-            expected_result = {"test/data": {"15_min": 6, "hourly": 2}}
-            self.assertEqual(load_config_data(temp_file.name), expected_result)
+        mock_delete_snapshot.assert_has_calls(expected_calls, any_order=True)
 
 
 if __name__ == "__main__":

@@ -1,15 +1,19 @@
+import logging
 import os
 from subprocess import Popen, PIPE
-from typing import Optional, Tuple
+from pathlib import Path
+from tomllib import load as toml_load
+from typing import Optional
 
 
 def get_logger_dict(
-    level: Optional[str] = "DEBUG", log_path: Optional[str] = ""
+    level: Optional[str] = "DEBUG",
+    log_path: Optional[str] = "",
 ) -> dict:
     """Get the logging configuration dictionary.
 
     Args:
-        level (str, optional): The logging level. Allowed values are 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'.
+        level (str, optional): The logging level. Allowed values are in allowed.
             Defaults to "DEBUG".
         log_path (str, optional): The path to the log file. Defaults to "" (empty string).
 
@@ -38,9 +42,8 @@ def get_logger_dict(
     if log_path:
         log_dir = os.path.dirname(log_path)
         if not os.path.isdir(log_dir):
-            raise ValueError(
-                f"Invalid log path: {log_path}. The directory does not exist."
-            )
+            error = f"Invalid log path: {log_path}. The directory does not exist."
+            raise ValueError(error)
         handlers["file"] = {
             "level": level,
             "class": "logging.FileHandler",
@@ -62,7 +65,7 @@ def get_logger_dict(
     }
 
 
-def bash_wrapper(command: str) -> Tuple[str, Optional[str], int]:
+def bash_wrapper(command: str) -> str:
     """Execute a bash command and capture the output.
 
     Args:
@@ -75,7 +78,15 @@ def bash_wrapper(command: str) -> Tuple[str, Optional[str], int]:
 
     process = Popen(command.split(), stdout=PIPE, stderr=PIPE)
     output, error = process.communicate()
-    if process.returncode != 0:
-        return output.decode(), error.decode(), process.returncode
+    return_code = process.returncode
+    if return_code != 0:
+        logging.critical("failed %s %i", error, return_code)
+        raise ValueError(error)
 
-    return output.decode(), None, process.returncode
+    return output.decode()
+
+
+def load_config_data(config_file: Path) -> dict:
+    with config_file.open("rb") as f:
+        config_data = toml_load(f)
+    return config_data
