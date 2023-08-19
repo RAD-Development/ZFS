@@ -1,4 +1,3 @@
-import unittest
 from datetime import datetime, timezone
 from re import compile as re_compile
 from unittest.mock import patch, MagicMock, call
@@ -118,7 +117,3 @@ class TestDeleteSnapshots:
         ]
 
         mock_delete_snapshot.assert_has_calls(expected_calls, any_order=True)
-
-
-if __name__ == "__main__":
-    unittest.main()

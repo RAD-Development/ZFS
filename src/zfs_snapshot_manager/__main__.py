@@ -1,10 +1,10 @@
 import logging
 import logging.config
 from datetime import datetime
+from os import getenv
 from pathlib import Path
 
 from common import get_logger_dict, load_config_data
-
 from zfs_snapshot_manager import create_snapshots, delete_snapshots
 
 
@@ -15,8 +15,9 @@ def main():
 
     now = datetime.now()
 
-    # TODO make __file__ configribul
-    config_data = load_config_data(Path(__file__).parent / "config.toml")
+    config_dir = getenv("ZFS_SNAPSHOT_MANAGER_CONFIG_DIR", __file__)
+    config_file = getenv("ZFS_SNAPSHOT_MANAGER_CONFIG_FILE", "config.toml")
+    config_data = load_config_data(Path(config_dir).parent / config_file)
     create_snapshots(now=now, dataset_names=set(config_data.keys()))
 
     delete_snapshots(config_data=config_data)

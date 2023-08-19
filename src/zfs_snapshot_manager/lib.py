@@ -7,6 +7,11 @@ from common import bash_wrapper
 
 
 def get_snapshots() -> dict[str, set[str]]:
+    """Gets all snapshots from zfs and process then is test dicts of sets
+
+    Returns:
+        dict[str, set[str]]: a dicts of all pool names that have snapshots with a set of all snapshot names
+    """
     output = bash_wrapper("zfs list -Hp -t snapshot -o name")
 
     snapshot_list = output.strip().split("\n")
@@ -20,8 +25,12 @@ def get_snapshots() -> dict[str, set[str]]:
 
 
 def create_snapshots(now: datetime, dataset_names: set[str]):
-    # Im not a math major
-    # time = now.replace(minute=(int(now.minute/15)*15)).strftime("%Y-%m-%d-%H-%M")
+    """Create a zfs snapshot with timestamp at the nearest 15 min
+
+    Args:
+        now (datetime): the current time
+        dataset_names (set[str]): a set of all the pools you want to be snapshotted
+    """
     nearest_15_min = now.replace(minute=(now.minute - (now.minute % 15)))
     time_stamp = nearest_15_min.strftime("auto_%Y%m%d%H%M")
     for dataset_name in dataset_names:
@@ -30,6 +39,12 @@ def create_snapshots(now: datetime, dataset_names: set[str]):
 
 
 def delete_snapshot(dataset_name: str, snapshot: str):
+    """Deletes a zfs snapshot
+
+    Args:
+        dataset_name (str): a dataset name
+        snapshot (str): a snapshot name
+    """
     bash_wrapper(f"sudo zfs destroy {dataset_name}@{snapshot}")
 
 
@@ -39,6 +54,14 @@ def delete_snapshots_in_dataset(
     snapshots: set[str],
     snapshots_wanted: int,
 ):
+    """deletes  all the snapshot in a dataset that match a filter
+
+    Args:
+        dataset_name (str): the name of the data set name
+        snapshot_filter (str): the snapshot filter
+        snapshots (set[str]): set of snapshot names
+        snapshots_wanted (int): the number of snapshot that are wanted
+    """
     filtered_snapshots = [
         snapshot for snapshot in snapshots if search(snapshot_filter, snapshot)
     ]
@@ -49,6 +72,11 @@ def delete_snapshots_in_dataset(
 
 
 def delete_snapshots(config_data: dict):
+    """delete all snapshots that match the pattern in config data
+
+    Args:
+        config_data (dict): the data from config.toml
+    """
     dataset_snapshots = get_snapshots()
 
     FILTERS = {
