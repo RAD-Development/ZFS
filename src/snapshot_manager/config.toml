@@ -1,0 +1,7 @@
+# Snapshot and storage deration
+
+["test/data"]
+15_min = 6
+hourly = 2
+daily = 0
+mountly = 0
