@@ -140,6 +140,6 @@ Test/
 .vscode/
 secret.*
 *.tar.zst
-
+config.toml
 
 Log/
