@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from re import compile as re_compile
 from unittest.mock import patch, MagicMock, call
 
-from snapshot_manager import (
+from zfs_snapshot_manager import (
     get_snapshots,
     create_snapshots,
     delete_snapshots,
@@ -13,7 +13,7 @@ from snapshot_manager import (
 
 class TestGetSnapshots:
     @patch(
-        target="snapshot_manager.lib.bash_wrapper",
+        target="zfs_snapshot_manager.lib.bash_wrapper",
         return_value=MagicMock(),
     )
     def test_get_snapshots(self, mock_bash_wrapper):
@@ -25,7 +25,7 @@ class TestGetSnapshots:
 
 class TestCreateSnapshots:
     @patch(
-        target="snapshot_manager.lib.bash_wrapper",
+        target="zfs_snapshot_manager.lib.bash_wrapper",
         return_value=MagicMock(),
     )
     def test_create_snapshots(self, mock_bash_wrapper):
@@ -42,7 +42,7 @@ class TestCreateSnapshots:
 
 
 class TestManageSnapshots:
-    @patch(target="snapshot_manager.lib.bash_wrapper", return_value="")
+    @patch(target="zfs_snapshot_manager.lib.bash_wrapper", return_value="")
     def test_manage_snapshots(self, mock_bash_wrapper):
         dataset_name = "test/data"
         snapshot_filter = re_compile(r"auto_\d{10}(?:15|30|45)")
@@ -72,8 +72,8 @@ class TestManageSnapshots:
 
 
 class TestDeleteSnapshots:
-    @patch(target="snapshot_manager.lib.delete_snapshot", return_value="")
-    @patch(target="snapshot_manager.lib.get_snapshots", return_value=MagicMock())
+    @patch(target="zfs_snapshot_manager.lib.delete_snapshot", return_value="")
+    @patch(target="zfs_snapshot_manager.lib.get_snapshots", return_value=MagicMock())
     def test_delete_snapshots(self, mock_get_snapshots, mock_delete_snapshot):
         snapshots = {
             "auto_202208010030",

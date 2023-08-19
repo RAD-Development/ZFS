@@ -5,7 +5,7 @@ from pathlib import Path
 
 from common import get_logger_dict, load_config_data
 
-from snapshot_manager import create_snapshots, delete_snapshots
+from zfs_snapshot_manager import create_snapshots, delete_snapshots
 
 
 def main():
