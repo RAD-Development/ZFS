@@ -17,7 +17,7 @@ class TestGetLoggerDict:
         with pytest.raises(ValueError, match="Invalid logging level INVALID_LEVEL"):
             get_logger_dict(level="INVALID_LEVEL")
 
-    @patch(target="common.common.os.path.isdir", return_value=False)
+    @patch(target="common.lib.os.path.isdir", return_value=False)
     def test_get_logger_dict_with_invalid_log_path(self, _mock_isdir):
         with pytest.raises(ValueError, match="Invalid log path: /path/to/logfile.log"):
             get_logger_dict(level="DEBUG", log_path="/path/to/logfile.log")
@@ -26,6 +26,11 @@ class TestGetLoggerDict:
         logger_dict = get_logger_dict(level="DEBUG")
         assert "file" not in logger_dict["handlers"]
         assert "console" in logger_dict["handlers"]
+
+    @patch(target="common.lib.os.path.isdir", return_value=True)
+    def test_get_logger_dict_with_log_path(self, _mock_isdir):
+        logger_dict = get_logger_dict(level="DEBUG", log_path="/path/to/logfile.log")
+        assert "console", "file" in logger_dict["handlers"]
 
 
 class TestBashWrapper:
