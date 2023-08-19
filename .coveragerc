@@ -3,6 +3,7 @@ branch = True
 omit =
         *tests*
         *__init__*
+        *__main__.py
 [report]
 exclude_lines = 
         pragma: no cover
