@@ -15,10 +15,13 @@ def main():
 
     now = datetime.now()
 
-    config_dir = getenv("ZFS_SNAPSHOT_MANAGER_CONFIG_DIR", __file__)
-    config_file = getenv("ZFS_SNAPSHOT_MANAGER_CONFIG_FILE", "config.toml")
-    config_data = load_config_data(Path(config_dir).parent / config_file)
-    create_snapshots(now=now, dataset_names=set(config_data.keys()))
+    config_data = load_config_data(Path(__file__).parent / "config.toml")
+    logging.debug("config_data %s", config_data)
+
+    datasets = set(config_data.keys())
+    logging.info("%s are being snapshotted", datasets)
+
+    create_snapshots(now=now, dataset_names=datasets)
 
     delete_snapshots(config_data=config_data)
 
