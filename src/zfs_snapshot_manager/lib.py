@@ -6,6 +6,28 @@ from re import search, compile as re_compile
 from common import bash_wrapper
 
 
+def delete_snapshot(dataset_name: str, snapshot_name: str):
+    """Deletes a zfs snapshot
+
+    Args:
+        dataset_name (str): a dataset name
+        snapshot (str): a snapshot name
+    """
+    logging.debug("deleting %s@%s", dataset_name, snapshot_name)
+    bash_wrapper(f"zfs destroy {dataset_name}@{snapshot_name}")
+
+
+def create_snapshot(dataset_name: str, snapshot_name: str):
+    """Creates a zfs snapshot
+
+    Args:
+        dataset_name (str): a dataset name
+        snapshot (str): a snapshot name
+    """
+    logging.debug("Creating %s@%s", dataset_name, snapshot_name)
+    bash_wrapper(f"zfs snapshot {dataset_name}@{snapshot_name}")
+
+
 def get_snapshots() -> dict[str, set[str]]:
     """Gets all snapshots from zfs and process then is test dicts of sets
 
@@ -34,19 +56,7 @@ def create_snapshots(now: datetime, dataset_names: set[str]):
     nearest_15_min = now.replace(minute=(now.minute - (now.minute % 15)))
     time_stamp = nearest_15_min.strftime("auto_%Y%m%d%H%M")
     for dataset_name in dataset_names:
-        command = f"zfs snapshot {dataset_name}@{time_stamp}"
-        bash_wrapper(command)
-
-
-def delete_snapshot(dataset_name: str, snapshot: str):
-    """Deletes a zfs snapshot
-
-    Args:
-        dataset_name (str): a dataset name
-        snapshot (str): a snapshot name
-    """
-    logging.debug("deleting %s@%s", dataset_name, snapshot)
-    bash_wrapper(f"zfs destroy {dataset_name}@{snapshot}")
+        create_snapshot(dataset_name=dataset_name, snapshot_name=time_stamp)
 
 
 def delete_snapshots_in_dataset(
@@ -75,7 +85,7 @@ def delete_snapshots_in_dataset(
     logging.info("%s are being deleted", snapshots_being_deleted)
 
     for snapshot in snapshots_being_deleted:
-        delete_snapshot(dataset_name=dataset_name, snapshot=snapshot)
+        delete_snapshot(dataset_name=dataset_name, snapshot_name=snapshot)
 
 
 def delete_snapshots(config_data: dict):

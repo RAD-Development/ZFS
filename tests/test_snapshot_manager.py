@@ -34,8 +34,8 @@ class TestCreateSnapshots:
         create_snapshots(now, {"dataset1", "dataset2"})
 
         expected_calls = [
-            call("sudo zfs snapshot dataset1@auto_202308010000"),
-            call("sudo zfs snapshot dataset2@auto_202308010000"),
+            call("zfs snapshot dataset1@auto_202308010000"),
+            call("zfs snapshot dataset2@auto_202308010000"),
         ]
         mock_bash_wrapper.assert_has_calls(expected_calls, any_order=True)
 
@@ -63,9 +63,9 @@ class TestManageSnapshots:
         )
 
         expected_calls = [
-            call("sudo zfs destroy test/data@auto_202208061215"),
-            call("sudo zfs destroy test/data@auto_202308061215"),
-            call("sudo zfs destroy test/data@auto_202308061230"),
+            call("zfs destroy test/data@auto_202208061215"),
+            call("zfs destroy test/data@auto_202308061215"),
+            call("zfs destroy test/data@auto_202308061230"),
         ]
         mock_bash_wrapper.assert_has_calls(expected_calls, any_order=True)
 
@@ -91,29 +91,41 @@ class TestDeleteSnapshots:
         }
 
         mock_get_snapshots.return_value = {
-            "test/data": snapshots,
-            "test/data2": snapshots,
-            "test/data3": snapshots,
+            "test/data4": snapshots,
+            "test/data5": snapshots,
+            "test/data6": snapshots,
         }
 
         config_data = {
-            "test/data": {"15_min": 6, "hourly": 2, "daily": 0, "monthly": 0},
-            "test/data2": {"15_min": 2},
+            "test/data4": {"15_min": 6, "hourly": 2, "daily": 0, "monthly": 0},
+            "test/data5": {"15_min": 2},
         }
         delete_snapshots(config_data=config_data)
 
-        expected_calls = [
-            call(dataset_name="test/data", snapshot="auto_202208010030"),
-            call(dataset_name="test/data", snapshot="auto_202308010030"),
-            call(dataset_name="test/data", snapshot="auto_202308052345"),
-            call(dataset_name="test/data", snapshot="auto_202308060200"),
-            call(dataset_name="test/data2", snapshot="auto_202208010030"),
-            call(dataset_name="test/data2", snapshot="auto_202308010030"),
-            call(dataset_name="test/data2", snapshot="auto_202308052345"),
-            call(dataset_name="test/data2", snapshot="auto_202308060015"),
-            call(dataset_name="test/data2", snapshot="auto_202308060030"),
-            call(dataset_name="test/data2", snapshot="auto_202308060045"),
-            call(dataset_name="test/data2", snapshot="auto_202308060145"),
+        snapshot_names1 = (
+            "auto_202208010030",
+            "auto_202308010030",
+            "auto_202308052345",
+            "auto_202308060200",
+        )
+        expected_calls1 = [
+            call(dataset_name="test/data4", snapshot_name=snapshot_name)
+            for snapshot_name in snapshot_names1
         ]
 
+        snapshot_names2 = (
+            "auto_202208010030",
+            "auto_202308010030",
+            "auto_202308052345",
+            "auto_202308060015",
+            "auto_202308060030",
+            "auto_202308060045",
+            "auto_202308060145",
+        )
+        expected_calls2 = [
+            call(dataset_name="test/data5", snapshot_name=snapshot_name)
+            for snapshot_name in snapshot_names2
+        ]
+
+        expected_calls = expected_calls1 + expected_calls2
         mock_delete_snapshot.assert_has_calls(expected_calls, any_order=True)
