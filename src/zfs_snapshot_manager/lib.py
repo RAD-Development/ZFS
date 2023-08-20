@@ -1,9 +1,7 @@
 import logging
-
+from collections import defaultdict
 from datetime import datetime
 from re import search, compile as re_compile
-
-from collections import defaultdict
 
 from common import bash_wrapper
 
@@ -36,7 +34,7 @@ def create_snapshots(now: datetime, dataset_names: set[str]):
     nearest_15_min = now.replace(minute=(now.minute - (now.minute % 15)))
     time_stamp = nearest_15_min.strftime("auto_%Y%m%d%H%M")
     for dataset_name in dataset_names:
-        command = f"sudo zfs snapshot {dataset_name}@{time_stamp}"
+        command = f"zfs snapshot {dataset_name}@{time_stamp}"
         bash_wrapper(command)
 
 
@@ -48,7 +46,7 @@ def delete_snapshot(dataset_name: str, snapshot: str):
         snapshot (str): a snapshot name
     """
     logging.debug("deleting %s@%s", dataset_name, snapshot)
-    bash_wrapper(f"sudo zfs destroy {dataset_name}@{snapshot}")
+    bash_wrapper(f"zfs destroy {dataset_name}@{snapshot}")
 
 
 def delete_snapshots_in_dataset(
@@ -72,7 +70,7 @@ def delete_snapshots_in_dataset(
 
     logging.debug("snapshot_filter %s", snapshot_filter)
     logging.debug("filtered_snapshots %s", filtered_snapshots)
-    
+
     snapshots_being_deleted = filtered_snapshots[:-snapshots_wanted]
     logging.info("%s are being deleted", snapshots_being_deleted)
 
